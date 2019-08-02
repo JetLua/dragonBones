@@ -1,6 +1,6 @@
 {
   "name": "dragonbones",
-  "version": "0.1.1",
+  "version": "5.7.0",
   "description": "DragonBones for Pixi.js",
   "main": "dragonBones.js",
   "types": "dragonBones.d.ts",
@@ -8,5 +8,5 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "MIT"
 }
