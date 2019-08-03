@@ -15648,33 +15648,38 @@ var dragonBones;
                         var textureAtlasWidth = currentTextureAtlasData.width > 0.0 ? currentTextureAtlasData.width : renderTexture.baseTexture.width;
                         var textureAtlasHeight = currentTextureAtlasData.height > 0.0 ? currentTextureAtlasData.height : renderTexture.baseTexture.height;
                         var region = currentTextureData.region;
-                        meshDisplay.vertices = new Float32Array(vertexCount * 2);
-                        meshDisplay.geometry.getBuffer('aTextureCoord').data = new Float32Array(vertexCount * 2);
-                        meshDisplay.geometry.getIndex().data = new Uint16Array(triangleCount * 3);
+
+                        var vertices = new Float32Array(vertexCount * 2);
+                        var uvs = new Float32Array(vertexCount * 2);
+                        var indices = new Uint16Array(triangleCount * 3);
+
                         for (var i = 0, l = vertexCount * 2; i < l; ++i) {
-                            meshDisplay.vertices[i] = floatArray[vertexOffset + i] * scale;
+                            vertices[i] = floatArray[vertexOffset + i] * scale;
                         }
                         for (var i = 0; i < triangleCount * 3; ++i) {
                             // @ts-ignore
-                            meshDisplay.geometry.getIndex().data[i] = intArray[this._geometryData.offset + 4 /* GeometryVertexIndices */ + i];
+                            indices[i] = intArray[this._geometryData.offset + 4 /* GeometryVertexIndices */ + i];
                         }
                         for (var i = 0, l = vertexCount * 2; i < l; i += 2) {
                             var u = floatArray[uvOffset + i];
                             var v = floatArray[uvOffset + i + 1];
                             if (currentTextureData.rotated) {
                                 // @ts-ignore
-                                meshDisplay.geometry.getBuffer('aTextureCoord').data[i] = (region.x + (1.0 - v) * region.width) / textureAtlasWidth;
+                                uvs[i] = (region.x + (1.0 - v) * region.width) / textureAtlasWidth;
                                 // @ts-ignore
-                                meshDisplay.geometry.getBuffer('aTextureCoord').data[i + 1] = (region.y + u * region.height) / textureAtlasHeight;
+                                uvs[i + 1] = (region.y + u * region.height) / textureAtlasHeight;
                             }
                             else {
                                 // @ts-ignore
-                                meshDisplay.geometry.getBuffer('aTextureCoord').data[i] = (region.x + u * region.width) / textureAtlasWidth;
+                                uvs[i] = (region.x + u * region.width) / textureAtlasWidth;
                                 // @ts-ignore
-                                meshDisplay.geometry.getBuffer('aTextureCoord').data[i + 1] = (region.y + v * region.height) / textureAtlasHeight;
+                                uvs[i + 1] = (region.y + v * region.height) / textureAtlasHeight;
                             }
                         }
                         this._textureScale = 1.0;
+                        meshDisplay.vertices = vertices;
+                        meshDisplay.uvBuffer.update(uvs);
+                        meshDisplay.geometry.addIndex(indices);
                         meshDisplay.texture = renderTexture;
                         var isSkinned = this._geometryData.weight !== null;
                         var isSurface = this._parent._boneData.type !== 0 /* Bone */;
