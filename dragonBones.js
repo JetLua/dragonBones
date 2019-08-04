@@ -15664,16 +15664,11 @@ var dragonBones;
                             var u = floatArray[uvOffset + i];
                             var v = floatArray[uvOffset + i + 1];
                             if (currentTextureData.rotated) {
-                                // @ts-ignore
-                                uvs[i] = (region.x + (1.0 - v) * region.width) / textureAtlasWidth;
-                                // @ts-ignore
-                                uvs[i + 1] = (region.y + u * region.height) / textureAtlasHeight;
-                            }
-                            else {
-                                // @ts-ignore
-                                uvs[i] = (region.x + u * region.width) / textureAtlasWidth;
-                                // @ts-ignore
-                                uvs[i + 1] = (region.y + v * region.height) / textureAtlasHeight;
+                                uvs[i] = 1 - v
+                                uvs[i + 1] = u
+                            } else {
+                                uvs[i] = u
+                                uvs[i + 1] = v
                             }
                         }
                         this._textureScale = 1.0;
@@ -15932,7 +15927,7 @@ var dragonBones;
         };
         PixiFactory.prototype._buildSlot = function (_dataPackage, slotData, armature) {
             var slot = dragonBones.BaseObject.borrowObject(dragonBones.PixiSlot);
-            slot.init(slotData, armature, new PIXI.Sprite(PIXI.Texture.EMPTY), new PIXI.SimpleMesh(null, null, null, null, PIXI.DRAW_MODES.TRIANGLES));
+            slot.init(slotData, armature, new PIXI.Sprite(PIXI.Texture.EMPTY), new PIXI.SimpleMesh());
             return slot;
         };
         /**
