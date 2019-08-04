@@ -6,7 +6,7 @@
 ### Install
 
 ```bash
-npm i @iro/dragonbones
+npm i dragonbones.js
 ```
 
 ### Usage
