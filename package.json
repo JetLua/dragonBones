@@ -1,8 +1,9 @@
 {
-  "name": "@iro/dragonbones",
-  "version": "5.7.2",
+  "name": "dragonbones.js",
+  "version": "5.7.0",
   "description": "DragonBones Runtime for Pixi.js",
   "main": "dragonBones.js",
+  "module": "dragonBones.js",
   "types": "dragonBones.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
