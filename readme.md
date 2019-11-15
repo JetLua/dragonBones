@@ -1,5 +1,6 @@
 ## dragonBones
-
+[![npm version](https://img.shields.io/npm/v/dragonbones.js.svg?style=flat&colorB=brightgreen)](https://www.npmjs.com/package/dragonbones.js)
+[![npm downloads](https://img.shields.io/npm/dm/dragonbones.js.svg?style=flat&colorB=brightgreen)](https://www.npmjs.com/package/dragonbones.js)
 
 [官方库](https://github.com/DragonBones/DragonBonesJS/tree/master/Pixi/) 需要几处改动才能用得顺手，所以有了这个修改版。
 
