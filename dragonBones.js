@@ -129,6 +129,7 @@ var __extends = function (t, e) {
     }
     r.prototype = e.prototype, t.prototype = new r();
 };
+
 /**
  * The MIT License (MIT)
  *
@@ -6661,7 +6662,7 @@ var dragonBones;
         };
         IKConstraint.prototype._onClear = function () {
             _super.prototype._onClear.call(this);
-            this._scaleEnabled = false;
+            // this._scaleEnabled = false;
             this._bendPositive = false;
             this._weight = 1.0;
             this._constraintData = null;
@@ -6757,7 +6758,7 @@ var dragonBones;
             this._bone = this._constraintData.bone !== null ? this._armature.getBone(this._constraintData.bone.name) : null;
             {
                 var ikConstraintData = this._constraintData;
-                this._scaleEnabled = ikConstraintData.scaleEnabled;
+                // this._scaleEnabled = ikConstraintData.scaleEnabled;
                 this._bendPositive = ikConstraintData.bendPositive;
                 this._weight = ikConstraintData.weight;
             }
@@ -8823,15 +8824,30 @@ var dragonBones;
                                         break;
                                     }
                                     case 22 /* SlotDeform */: {
-                                        var timeline = dragonBones.BaseObject.borrowObject(dragonBones.DeformTimelineState);
-                                        timeline.target = this._armature.animation.getBlendState(BlendState.SLOT_DEFORM, slot.name, slot);
-                                        timeline.init(this._armature, this, timelineData);
-                                        if (timeline.target !== null) {
-                                            this._slotBlendTimelines.push(timeline);
-                                            ffdFlags.push(timeline.geometryOffset);
+                                        var dragonBonesData = this._animationData.parent.parent;
+                                        var timelineArray = dragonBonesData.timelineArray;
+                                        var frameIntOffset = this._animationData.frameIntOffset + timelineArray[timelineData.offset + 3 /* TimelineFrameValueCount */];
+                                        var frameIntArray = dragonBonesData.frameIntArray;
+                                        var geometryOffset = frameIntArray[frameIntOffset + 0 /* DeformVertexOffset */];
+                                        if (geometryOffset < 0) {
+                                            geometryOffset += 65536; // Fixed out of bounds bug.
                                         }
-                                        else {
-                                            timeline.returnToPool();
+                                        for (var i = 0, l = slot.displayFrameCount; i < l; ++i) {
+                                            var displayFrame = slot.getDisplayFrameAt(i);
+                                            var geometryData = displayFrame.getGeometryData();
+                                            if (geometryData === null) {
+                                                continue;
+                                            }
+                                            if (geometryData.offset === geometryOffset) {
+                                                var timeline = dragonBones.BaseObject.borrowObject(dragonBones.DeformTimelineState);
+                                                timeline.target = this._armature.animation.getBlendState(BlendState.SLOT_DEFORM, displayFrame.rawDisplayData.name, slot);
+                                                timeline.displayFrame = displayFrame;
+                                                timeline.init(this._armature, this, timelineData);
+                                                this._slotBlendTimelines.push(timeline);
+                                                displayFrame.updateDeformVertices();
+                                                ffdFlags.push(geometryOffset);
+                                                break;
+                                            }
                                         }
                                         break;
                                     }
@@ -8870,7 +8886,6 @@ var dragonBones;
                                 var geometryData = displayFrame.getGeometryData();
                                 if (geometryData !== null && ffdFlags.indexOf(geometryData.offset) < 0) {
                                     var timeline = dragonBones.BaseObject.borrowObject(dragonBones.DeformTimelineState);
-                                    timeline.geometryOffset = geometryData.offset; //
                                     timeline.displayFrame = displayFrame; //
                                     timeline.target = this._armature.animation.getBlendState(BlendState.SLOT_DEFORM, slot.name, slot);
                                     timeline.init(this._armature, this, null);
@@ -11086,7 +11101,6 @@ var dragonBones;
         };
         DeformTimelineState.prototype._onClear = function () {
             _super.prototype._onClear.call(this);
-            this.geometryOffset = 0;
             this.displayFrame = null;
             this._deformCount = 0;
             this._deformOffset = 0;
@@ -11098,32 +11112,15 @@ var dragonBones;
                 var frameIntOffset = this._animationData.frameIntOffset + this._timelineArray[this._timelineData.offset + 3 /* TimelineFrameValueCount */];
                 var dragonBonesData = this._animationData.parent.parent;
                 var frameIntArray = dragonBonesData.frameIntArray;
-                var slot = this.target.target;
-                this.geometryOffset = frameIntArray[frameIntOffset + 0 /* DeformVertexOffset */];
-                if (this.geometryOffset < 0) {
-                    this.geometryOffset += 65536; // Fixed out of bounds bug.
-                }
-                for (var i = 0, l = slot.displayFrameCount; i < l; ++i) {
-                    var displayFrame = slot.getDisplayFrameAt(i);
-                    var geometryData = displayFrame.getGeometryData();
-                    if (geometryData === null) {
-                        continue;
-                    }
-                    if (geometryData.offset === this.geometryOffset) {
-                        this.displayFrame = displayFrame;
-                        this.displayFrame.updateDeformVertices();
-                        break;
-                    }
-                }
-                if (this.displayFrame === null) {
-                    this.returnToPool(); //
-                    return;
-                }
                 this._valueOffset = this._animationData.frameFloatOffset;
                 this._valueCount = frameIntArray[frameIntOffset + 2 /* DeformValueCount */];
                 this._deformCount = frameIntArray[frameIntOffset + 1 /* DeformCount */];
                 this._deformOffset = frameIntArray[frameIntOffset + 3 /* DeformValueOffset */];
-                this._sameValueOffset = frameIntArray[frameIntOffset + 4 /* DeformFloatOffset */] + this._animationData.frameFloatOffset;
+                this._sameValueOffset = frameIntArray[frameIntOffset + 4 /* DeformFloatOffset */];
+                if (this._sameValueOffset < 0) {
+                    this._sameValueOffset += 65536; // Fixed out of bounds bug.
+                }
+                this._sameValueOffset += this._animationData.frameFloatOffset;
                 this._valueScale = this._armature.armatureData.scale;
                 this._valueArray = dragonBonesData.frameFloatArray;
                 this._rd.length = this._valueCount * 2;
@@ -14079,6 +14076,9 @@ var dragonBones;
             geometry.offset = rawData[dragonBones.DataParser.OFFSET];
             geometry.data = this._data;
             var weightOffset = this._intArrayBuffer[geometry.offset + 3 /* GeometryWeightOffset */];
+            if (weightOffset < -1) { // -1 is a special flag that there is no bones weight.
+                weightOffset += 65536; // Fixed out of bounds bug.
+            }
             if (weightOffset >= 0) {
                 var weight = dragonBones.BaseObject.borrowObject(dragonBones.WeightData);
                 var vertexCount = this._intArrayBuffer[geometry.offset + 0 /* GeometryVertexCount */];
@@ -14114,7 +14114,7 @@ var dragonBones;
             var frameFloatArray = new Float32Array(this._binary, this._binaryOffset + offsets[6], l4 / Float32Array.BYTES_PER_ELEMENT);
             var frameArray = new Int16Array(this._binary, this._binaryOffset + offsets[8], l5 / Int16Array.BYTES_PER_ELEMENT);
             var timelineArray = new Uint16Array(this._binary, this._binaryOffset + offsets[10], l6 / Uint16Array.BYTES_PER_ELEMENT);
-            var colorArray = l7 > 0 ? new Int16Array(this._binary, this._binaryOffset + offsets[12], l7 / Int16Array.BYTES_PER_ELEMENT) : intArray; // Color.
+            var colorArray = l7 > 0 ? new Int16Array(this._binary, this._binaryOffset + offsets[12], l7 / Uint16Array.BYTES_PER_ELEMENT) : intArray; // Color.
             this._data.binary = this._binary;
             this._data.intArray = this._intArrayBuffer = intArray;
             this._data.floatArray = floatArray;
@@ -15645,37 +15645,32 @@ var dragonBones;
                         var uvOffset = vertexOffset + vertexCount * 2;
                         var scale = this._armature._armatureData.scale;
                         var meshDisplay = this._renderDisplay;
-                        var textureAtlasWidth = currentTextureAtlasData.width > 0.0 ? currentTextureAtlasData.width : renderTexture.baseTexture.width;
-                        var textureAtlasHeight = currentTextureAtlasData.height > 0.0 ? currentTextureAtlasData.height : renderTexture.baseTexture.height;
-                        var region = currentTextureData.region;
-
                         var vertices = new Float32Array(vertexCount * 2);
                         var uvs = new Float32Array(vertexCount * 2);
                         var indices = new Uint16Array(triangleCount * 3);
-
                         for (var i = 0, l = vertexCount * 2; i < l; ++i) {
                             vertices[i] = floatArray[vertexOffset + i] * scale;
                         }
                         for (var i = 0; i < triangleCount * 3; ++i) {
-                            // @ts-ignore
                             indices[i] = intArray[this._geometryData.offset + 4 /* GeometryVertexIndices */ + i];
                         }
                         for (var i = 0, l = vertexCount * 2; i < l; i += 2) {
                             var u = floatArray[uvOffset + i];
                             var v = floatArray[uvOffset + i + 1];
                             if (currentTextureData.rotated) {
-                                uvs[i] = 1 - v
-                                uvs[i + 1] = u
-                            } else {
-                                uvs[i] = u
-                                uvs[i + 1] = v
+                                uvs[i] = 1 - v;
+                                uvs[i + 1] = u;
+                            }
+                            else {
+                                uvs[i] = u;
+                                uvs[i + 1] = v;
                             }
                         }
                         this._textureScale = 1.0;
+                        meshDisplay.texture = renderTexture;
                         meshDisplay.vertices = vertices;
                         meshDisplay.uvBuffer.update(uvs);
-                        meshDisplay.geometry.addIndex(indices);
-                        meshDisplay.texture = renderTexture;
+                        meshDisplay.geometry.getIndex().update(indices);
                         var isSkinned = this._geometryData.weight !== null;
                         var isSurface = this._parent._boneData.type !== 0 /* Bone */;
                         if (isSkinned || isSurface) {
@@ -16026,10 +16021,9 @@ var dragonBones;
 })(dragonBones || (dragonBones = {}));
 
 if (typeof module !== 'undefined') {
-  module.exports = dragonBones;
+    module.exports = dragonBones;
 } else if (typeof global !== 'undefined') {
-  global.dragonBones = dragonBones;
+    global.dragonBones = dragonBones;
 } else if (typeof window !== 'undefined') {
-  window.dragonBones = dragonBones;
+    window.dragonBones = dragonBones;
 }
-
