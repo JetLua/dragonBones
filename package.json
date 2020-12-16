@@ -1,6 +1,6 @@
 {
   "name": "dragonbones.js",
-  "version": "5.7.1",
+  "version": "5.7.2",
   "description": "DragonBones Runtime for Pixi.js",
   "main": "dragonBones.js",
   "module": "dragonBones.js",
@@ -12,7 +12,10 @@
     "type": "git",
     "url": "https://github.com/JetLua/dragonBones"
   },
-  "keywords": ["pixi.js", "dragonBones"],
+  "keywords": [
+    "pixi.js",
+    "dragonBones"
+  ],
   "author": "JetLu",
   "license": "MIT"
 }
