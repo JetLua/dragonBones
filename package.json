@@ -1,6 +1,6 @@
 {
   "name": "dragonbones.js",
-  "version": "5.7.2",
+  "version": "5.7.3",
   "description": "DragonBones Runtime for Pixi.js",
   "main": "dragonBones.js",
   "module": "dragonBones.js",

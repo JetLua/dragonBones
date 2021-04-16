@@ -6554,3 +6554,5 @@ declare namespace dragonBones {
         readonly soundEventManager: PixiArmatureDisplay;
     }
 }
+
+export = dragonBones;
